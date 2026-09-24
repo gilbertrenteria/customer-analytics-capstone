@@ -1,0 +1,31 @@
+Column Name,Data Type,Description
+ID,Integer,Unique identifier for each customer.
+Year_Birth,Integer,Year of birth of the customer.
+Education,String,"Education level of the customer (e.g., Basic, Graduation, PhD, etc.)."
+Marital_Status,String,"Marital status of the customer (e.g., Single, Married, Together, Divorced, Widowed)."
+Income,Float,Yearly household income of the customer in monetary units.
+Kidhome,Integer,Number of children in the household.
+Teenhome,Integer,Number of teenagers in the household.
+Dt_Customer,Date,Date when the customer enrolled with the company.
+Recency,Integer,Number of days since the last purchase.
+MntWines,Integer,Amount spent on wine products in the last 2 years.
+MntFruits,Integer,Amount spent on fruit products in the last 2 years.
+MntMeatProducts,Integer,Amount spent on meat products in the last 2 years.
+MntFishProducts,Integer,Amount spent on fish products in the last 2 years.
+MntSweetProducts,Integer,Amount spent on sweet products in the last 2 years.
+MntGoldProds,Integer,Amount spent on gold products in the last 2 years.
+NumDealsPurchases,Integer,Number of purchases made with a discount.
+NumWebPurchases,Integer,Number of purchases made through the company's website.
+NumCatalogPurchases,Integer,Number of purchases made using a catalog.
+NumStorePurchases,Integer,Number of purchases made directly in stores.
+NumWebVisitsMonth,Integer,Number of visits to the company's website in the last month.
+AcceptedCmp1,Integer,"1 if the customer accepted the first campaign offer, 0 otherwise."
+AcceptedCmp2,Integer,"1 if the customer accepted the second campaign offer, 0 otherwise."
+AcceptedCmp3,Integer,"1 if the customer accepted the third campaign offer, 0 otherwise."
+AcceptedCmp4,Integer,"1 if the customer accepted the fourth campaign offer, 0 otherwise."
+AcceptedCmp5,Integer,"1 if the customer accepted the fifth campaign offer, 0 otherwise."
+Response,Integer,"1 if the customer accepted the last campaign offer, 0 otherwise."
+Complain,Integer,"1 if the customer has complained in the last 2 years, 0 otherwise."
+Z_CostContact,Integer,Constant value used for internal cost tracking (always 3).
+Z_Revenue,Integer,Constant value used for internal revenue tracking (always 11).
+Response_Total,Integer,"Sum of all campaign responses (calculated field, optional)."
