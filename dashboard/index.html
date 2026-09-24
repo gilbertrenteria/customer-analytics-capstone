@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Customer Analytics Dashboard</title>
+<meta name="description" content="Interactive customer analytics dashboard for a retail campaign study: 2,237 customers, six campaigns, spend by category and channel, and who responds. Data analytics capstone by Gilbert Renteria.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  // Apply saved theme before paint (same localStorage key as the main site)
+  try { var t = localStorage.getItem('theme'); if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  :root { --bg:#f6f4ef; --surface:#ffffff; --surface-alt:#fbfaf7; --text:#201f1c; --muted:#6e6a62; --border:#e6e1d6; --accent:#2b5d63; --accent-soft:#dfeae9; --accent-contrast:#ffffff; --lime:#d9e021; --ink:#141413; --r:18px; --r-sm:12px; --shadow:0 1px 2px rgba(0,0,0,0.04),0 8px 24px -12px rgba(20,20,19,0.18); }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#17181a; --surface:#201f1c; --surface-alt:#242320; --text:#f1efe9; --muted:#a39d90; --border:#37342d; --accent:#6fb3ac; --accent-soft:#223634; --accent-contrast:#0d1615; }
+  }
+  :root[data-theme="dark"] { --bg:#17181a; --surface:#201f1c; --surface-alt:#242320; --text:#f1efe9; --muted:#a39d90; --border:#37342d; --accent:#6fb3ac; --accent-soft:#223634; --accent-contrast:#0d1615; }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .mono { font-family:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .wrap { max-width:1180px; margin:0 auto; padding:0 16px; }
+  @media (min-width:720px) { .wrap { padding:0 28px; } }
+
+  /* Nav */
+  .nav { position:sticky; top:0; z-index:50; background:color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--border); }
+  .nav .wrap { display:flex; align-items:center; justify-content:space-between; gap:12px; height:64px; }
+  .brand { font-weight:700; color:var(--text); letter-spacing:-0.01em; white-space:nowrap; }
+  .brand:hover { text-decoration:none; color:var(--accent); }
+  .links { display:flex; align-items:center; gap:18px; }
+  .links a { white-space:nowrap; color:var(--text); text-transform:uppercase; letter-spacing:0.08em; font-size:0.8rem; font-weight:600; }
+  .links a:hover { color:var(--accent); text-decoration:none; }
+  .theme-btn { display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; padding:0; }
+  .theme-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .theme-btn svg { width:18px; height:18px; }
+  .icon-sun { display:none; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .icon-sun { display:block; } :root:not([data-theme="light"]) .icon-moon { display:none; } }
+  :root[data-theme="dark"] .icon-sun { display:block; } :root[data-theme="dark"] .icon-moon { display:none; }
+  @media (max-width:560px) { .links { gap:12px; } .links a { font-size:0.72rem; } .hide-sm { display:none; } }
+
+  /* Header */
+  header.hero { padding:56px 0 24px; }
+  .kicker { font-family:'IBM Plex Mono', monospace; text-transform:uppercase; letter-spacing:0.12em; font-size:0.78rem; color:var(--accent); font-weight:500; margin:0 0 14px; }
+  h1 { font-size:clamp(1.9rem, 4.2vw, 3rem); line-height:1.12; letter-spacing:-0.02em; margin:0 0 16px; font-weight:700; }
+  .lede { font-size:1.08rem; color:var(--muted); max-width:760px; margin:0 0 20px; }
+  .pills { display:flex; flex-wrap:wrap; gap:8px; }
+  .pill { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:999px; border:1px solid var(--border); background:var(--surface); font-size:0.82rem; font-weight:500; color:var(--text); }
+  .pill.accent { background:var(--accent-soft); border-color:transparent; color:var(--accent); }
+  :root[data-theme="dark"] .pill.accent { color:var(--text); }
+
+  /* Sections */
+  section { padding:18px 0; }
+  .sec-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:10px 0 14px; }
+  h2 { font-size:1.35rem; letter-spacing:-0.01em; margin:0; font-weight:700; }
+  .sub { color:var(--muted); font-size:0.92rem; margin:0; }
+
+  /* Cards */
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:18px; box-shadow:var(--shadow); transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+  .card:hover { transform:translateY(-3px); border-color:color-mix(in srgb, var(--accent) 45%, var(--border)); }
+
+  /* Filter bar */
+  .filters { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:end; padding:14px 18px; }
+  .filters .f { display:flex; flex-direction:column; gap:4px; min-width:140px; flex:1 1 140px; }
+  .filters label { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); font-weight:600; }
+  .filters select { appearance:none; -webkit-appearance:none; width:100%; padding:9px 34px 9px 14px; border-radius:999px; border:1px solid var(--border); background:var(--surface-alt) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%236e6a62' stroke-width='1.6' stroke-linecap='round'/></svg>") no-repeat right 14px center; color:var(--text); font:inherit; font-size:0.92rem; font-weight:500; cursor:pointer; }
+  .filters select:focus { outline:2px solid var(--accent); outline-offset:1px; }
+  .filters .count { display:flex; align-items:center; gap:10px; flex:1 1 220px; justify-content:flex-end; padding-bottom:2px; }
+  .count .n { font-weight:700; font-size:1.1rem; }
+  .count .n small { font-weight:500; color:var(--muted); font-size:0.85rem; }
+  .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--text); font:inherit; font-size:0.85rem; font-weight:600; cursor:pointer; }
+  .btn:hover { border-color:var(--accent); color:var(--accent); }
+  .btn.small { padding:5px 12px; font-size:0.76rem; }
+  .btn[aria-pressed="true"] { background:var(--accent-soft); border-color:transparent; color:var(--accent); }
+  :root[data-theme="dark"] .btn[aria-pressed="true"] { color:var(--text); }
+
+  /* KPIs */
+  .kpis { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; }
+  @media (min-width:640px) { .kpis { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+  @media (min-width:1000px) { .kpis { grid-template-columns:repeat(6, minmax(0,1fr)); } }
+  .kpi { padding:16px; }
+  @media (min-width:1000px) { .kpi .lbl { min-height:2.4em; } }
+  .kpi .lbl { font-size:0.74rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); font-weight:600; margin:0 0 6px; }
+  .kpi .val { font-size:clamp(1.5rem, 2.4vw, 1.9rem); font-weight:700; letter-spacing:-0.02em; line-height:1.1; margin:0 0 6px; }
+  .kpi .meaning { color:var(--muted); font-size:0.8rem; line-height:1.4; margin:0; }
+
+  /* Charts */
+  .grid { display:grid; grid-template-columns:1fr; gap:14px; }
+  .grid > *, .two > *, .kpis > * { min-width:0; }
+  @media (min-width:860px) { .grid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  .chart-card h3 { font-size:1rem; margin:0 0 2px; font-weight:600; }
+  .chart-card .sub { margin-bottom:8px; font-size:0.84rem; }
+  .chart-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .chart-box { position:relative; height:260px; }
+  .chart-box.tall { height:300px; }
+  .chart-box canvas { max-width:100%; }
+  .tbl { display:none; overflow-x:auto; }
+  .tbl table { width:100%; border-collapse:collapse; font-size:0.86rem; font-variant-numeric:tabular-nums; }
+  .tbl th, .tbl td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--border); }
+  .tbl th { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); }
+  .tbl td.num, .tbl th.num { text-align:right; }
+  .chart-card.show-table .chart-box { display:none; }
+  .chart-card.show-table .tbl { display:block; }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 14px; margin:6px 0 0; padding:0; list-style:none; font-size:0.8rem; color:var(--muted); }
+  .legend li { display:inline-flex; align-items:center; gap:6px; }
+  .legend i { width:10px; height:10px; border-radius:3px; display:inline-block; }
+  .empty { position:absolute; inset:0; display:none; align-items:center; justify-content:center; color:var(--muted); font-size:0.9rem; text-align:center; padding:20px; }
+  .is-empty .empty { display:flex; } .is-empty canvas { visibility:hidden; }
+  .note { font-size:0.78rem; color:var(--muted); margin:8px 0 0; }
+  .donut-wrap { display:grid; grid-template-columns:1fr; gap:10px; align-items:center; }
+  @media (min-width:480px) { .donut-wrap { grid-template-columns:minmax(0,1fr) minmax(0,1fr); } }
+  .donut-stat { text-align:left; }
+  .donut-stat .big { font-size:2.4rem; font-weight:700; letter-spacing:-0.02em; line-height:1; margin:0 0 4px; }
+  .donut-stat p { margin:0; color:var(--muted); font-size:0.88rem; }
+
+  /* Findings */
+  .two { display:grid; grid-template-columns:1fr; gap:14px; }
+  @media (min-width:860px) { .two { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  .list { list-style:none; margin:0; padding:0; counter-reset:item; }
+  .list li { display:grid; grid-template-columns:30px 1fr; gap:10px; padding:11px 0; border-top:1px solid var(--border); }
+  .list li:first-child { border-top:0; padding-top:4px; }
+  .list li::before { counter-increment:item; content:counter(item, decimal-leading-zero); font-family:'IBM Plex Mono', monospace; color:var(--accent); font-size:0.8rem; font-weight:500; padding-top:3px; }
+  .list strong { display:block; font-weight:600; margin-bottom:2px; }
+  .list span { color:var(--muted); font-size:0.9rem; }
+
+  /* Footer card */
+  .built { display:grid; grid-template-columns:1fr; gap:16px; }
+  @media (min-width:860px) { .built { grid-template-columns:2fr 1fr; } }
+  .steps { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:10px 0; }
+  .steps .arrow { color:var(--muted); }
+  footer { padding:24px 0 48px; color:var(--muted); font-size:0.85rem; text-align:center; }
+  footer a { color:var(--text); font-weight:500; }
+
+  /* Reveal */
+  .reveal { opacity:0; transform:translateY(14px); transition:opacity .55s ease, transform .55s ease; }
+  .reveal.in { opacity:1; transform:none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity:1; transform:none; transition:none; } .card { transition:none; } html { scroll-behavior:auto; } }
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="Site">
+  <div class="wrap">
+    <a class="brand" href="/">Gilbert Renteria</a>
+    <div class="links">
+      <a href="/">Back to site</a>
+      <a href="https://github.com/gilbertrenteria/customer-analytics-capstone" target="_blank" rel="noopener">GitHub</a>
+      <button class="theme-btn" id="themeBtn" type="button" aria-label="Toggle dark mode" title="Toggle theme">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="kicker">Data Analytics Capstone · UT Dallas 2026</p>
+    <h1>Customer Analytics — Retail Campaign Study</h1>
+    <p class="lede">A food and wine retailer ran five marketing campaigns and then a sixth, final offer. This page looks at 2,237 of its customers to answer three questions a marketing manager would ask: who responds, where the spend comes from, and what the next campaign should do differently. Use the filters to slice every number by age, education, kids at home and marital status.</p>
+    <div class="pills" aria-label="Tools used">
+      <span class="pill accent">Built with SQL · Python · HTML/JS</span>
+      <span class="pill">2,237 customers</span>
+      <span class="pill">6 campaigns</span>
+      <span class="pill">2012–2014</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="wrap" aria-label="Filters">
+    <div class="card filters" id="filters">
+      <div class="f"><label for="fAge">Age group</label><select id="fAge" data-dim="age"></select></div>
+      <div class="f"><label for="fEdu">Education</label><select id="fEdu" data-dim="edu"></select></div>
+      <div class="f"><label for="fKids">Kids at home</label><select id="fKids" data-dim="kids"></select></div>
+      <div class="f"><label for="fMar">Marital status</label><select id="fMar" data-dim="marital"></select></div>
+      <div class="count">
+        <span class="n" id="nCount" aria-live="polite">n = 2,237 <small>customers</small></span>
+        <button class="btn small" id="resetBtn" type="button">Reset</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" aria-label="Key metrics">
+    <div class="kpis" id="kpis">
+      <div class="card kpi reveal"><p class="lbl">Customers</p><p class="val" id="kCust">–</p><p class="meaning">People in the current slice of the data.</p></div>
+      <div class="card kpi reveal"><p class="lbl">Avg income</p><p class="val" id="kInc">–</p><p class="meaning">Yearly household income, mean of customers who reported it.</p></div>
+      <div class="card kpi reveal"><p class="lbl">Avg spend (2 yrs)</p><p class="val" id="kSpend">–</p><p class="meaning">Total spent across all six product categories per customer.</p></div>
+      <div class="card kpi reveal"><p class="lbl">Response rate</p><p class="val" id="kResp">–</p><p class="meaning">Share who accepted the last campaign offer.</p></div>
+      <div class="card kpi reveal"><p class="lbl">Accepted any campaign</p><p class="val" id="kAny">–</p><p class="meaning">Share who said yes to at least one of the five earlier campaigns.</p></div>
+      <div class="card kpi reveal"><p class="lbl">Web visits / mo</p><p class="val" id="kWeb">–</p><p class="meaning">Average visits to the website in the last month.</p></div>
+    </div>
+  </section>
+
+  <section class="wrap" aria-label="Charts">
+    <div class="sec-head reveal"><h2>Where the spend and the responses come from</h2><p class="sub">All six charts below respond to the filters.</p></div>
+    <div class="grid">
+      <div class="card chart-card reveal" id="c1">
+        <div class="chart-head"><div><h3>Spend by product category</h3><p class="sub">Total spent in the last two years, current slice</p></div><button class="btn small tbl-btn" type="button" aria-pressed="false" aria-label="Show spend by product category as a table">Table</button></div>
+        <div class="chart-box"><canvas id="ch1" role="img"></canvas><div class="empty">No customers match these filters.</div></div>
+        <div class="tbl"></div>
+      </div>
+      <div class="card chart-card reveal" id="c2">
+        <div class="chart-head"><div><h3>Purchases by channel</h3><p class="sub">Average purchases per customer. Deals are discounted purchases across channels, not a separate channel.</p></div><button class="btn small tbl-btn" type="button" aria-pressed="false" aria-label="Show purchases by channel as a table">Table</button></div>
+        <div class="chart-box"><canvas id="ch2" role="img"></canvas><div class="empty">No customers match these filters.</div></div>
+        <div class="tbl"></div>
+      </div>
+      <div class="card chart-card reveal" id="c3">
+        <div class="chart-head"><div><h3>Campaign acceptance rate</h3><p class="sub">Share of customers who accepted each offer. The last campaign (Response) is highlighted.</p></div><button class="btn small tbl-btn" type="button" aria-pressed="false" aria-label="Show campaign acceptance rate as a table">Table</button></div>
+        <div class="chart-box"><canvas id="ch3" role="img"></canvas><div class="empty">No customers match these filters.</div></div>
+        <div class="tbl"></div>
+        <ul class="legend" aria-hidden="true"><li><i style="background:var(--accent)"></i>Campaigns 1–5</li><li><i style="background:#d9e021"></i>Last campaign (Response)</li></ul>
+      </div>
+      <div class="card chart-card reveal" id="c4">
+        <div class="chart-head"><div><h3>Response rate by age group</h3><p class="sub">Last-campaign response. Other filters apply; the age filter is ignored here so groups stay comparable.</p></div><button class="btn small tbl-btn" type="button" aria-pressed="false" aria-label="Show response rate by age group as a table">Table</button></div>
+        <div class="chart-box"><canvas id="ch4" role="img"></canvas><div class="empty">No customers match these filters.</div></div>
+        <div class="tbl"></div>
+      </div>
+      <div class="card chart-card reveal" id="c5">
+        <div class="chart-head"><div><h3>Average spend by education</h3><p class="sub">Two-year spend per customer. Other filters apply; the education filter is ignored here.</p></div><button class="btn small tbl-btn" type="button" aria-pressed="false" aria-label="Show average spend by education as a table">Table</button></div>
+        <div class="chart-box"><canvas id="ch5" role="img"></canvas><div class="empty">No customers match these filters.</div></div>
+        <div class="tbl"></div>
+      </div>
+      <div class="card chart-card reveal" id="c6">
+        <div class="chart-head"><div><h3>Spend concentration</h3><p class="sub">Share of total spend by customer spend quartile. Full dataset, not filtered.</p></div><button class="btn small tbl-btn" type="button" aria-pressed="false" aria-label="Show spend concentration as a table">Table</button></div>
+        <div class="donut-wrap">
+          <div class="chart-box" style="height:220px"><canvas id="ch6" role="img"></canvas></div>
+          <div class="donut-stat"><p class="big" id="donutBig">61.5%</p><p id="donutText">of all spend comes from the top 25% of customers. The bottom half accounts for 9.3%.</p></div>
+        </div>
+        <div class="tbl"></div>
+        <ul class="legend" id="legend6" aria-hidden="true"></ul>
+      </div>
+    </div>
+
+    <div class="sec-head reveal" style="margin-top:22px"><h2>Who says yes</h2><p class="sub">Full dataset, not filtered.</p></div>
+    <div class="grid">
+      <div class="card chart-card reveal" id="c7">
+        <div class="chart-head"><div><h3>Response by prior campaign accepts</h3><p class="sub">Last-campaign response rate by how many of the five earlier offers a customer accepted</p></div><button class="btn small tbl-btn" type="button" aria-pressed="false" aria-label="Show response by prior accepts as a table">Table</button></div>
+        <div class="chart-box"><canvas id="ch7" role="img"></canvas></div>
+        <div class="tbl"></div>
+      </div>
+      <div class="card chart-card reveal" id="c8">
+        <div class="chart-head"><div><h3>Response by days since last purchase</h3><p class="sub">Recent buyers say yes far more often</p></div><button class="btn small tbl-btn" type="button" aria-pressed="false" aria-label="Show response by recency as a table">Table</button></div>
+        <div class="chart-box"><canvas id="ch8" role="img"></canvas></div>
+        <div class="tbl"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" aria-label="Findings and recommendations">
+    <div class="two">
+      <div class="card reveal">
+        <div class="sec-head" style="margin-top:0"><h2>What the data says</h2></div>
+        <ol class="list" id="findings"></ol>
+      </div>
+      <div class="card reveal">
+        <div class="sec-head" style="margin-top:0"><h2>What I'd recommend</h2></div>
+        <ol class="list" id="recs"></ol>
+        <p class="note">Numbers in both panels are from the full dataset of 2,237 customers.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" aria-label="How this was built">
+    <div class="card reveal built">
+      <div>
+        <div class="sec-head" style="margin-top:0"><h2>How this was built</h2></div>
+        <div class="steps">
+          <span class="pill accent">MySQL</span><span class="arrow">→</span>
+          <span class="pill accent">Python · pandas · seaborn</span><span class="arrow">→</span>
+          <span class="pill accent">This page · HTML/JS · Chart.js</span>
+        </div>
+        <p class="sub" style="margin-top:6px">Income arrived as text with dollar signs and commas, 24 customers had no income on file, and three birth years put customers over 110 years old. I cleaned those in SQL and pandas, aggregated the results, and embedded a compact summary table in this page so every filter recomputes in the browser with no server.</p>
+        <p class="sub" style="margin-top:8px">The data is the public, anonymized "marketing_campaign" customer-personality teaching dataset (2,240 customers, enrolled 2012–2014). Ages are calculated as of 2014, the last year in the data.</p>
+      </div>
+      <div>
+        <p class="lbl" style="font-size:0.74rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);font-weight:600;margin:0 0 8px">Source and code</p>
+        <p style="margin:0 0 8px"><a href="https://github.com/gilbertrenteria/customer-analytics-capstone" target="_blank" rel="noopener">github.com/gilbertrenteria/customer-analytics-capstone</a></p>
+        <p class="sub">SQL queries, the Python notebook, the cleaned CSV and this dashboard are all in the repo.</p>
+        <p class="sub" style="margin-top:14px">Built by Gilbert Renteria · <a href="https://gilbertrenteria.dev">gilbertrenteria.dev</a></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p>© 2026 <a href="https://gilbertrenteria.dev">Gilbert Renteria</a> · <a href="https://www.linkedin.com/in/gilbertrenteria" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/gilbertrenteria" target="_blank" rel="noopener">GitHub</a></p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script id="data" type="application/json">{"meta":{"rows_total":2240,"rows_analysis":2237,"dropped_age_outliers":3,"dropped_year_birth":[1893,1899,1900],"null_income":24,"age_basis_year":2014,"enroll_min":"2012-07-30","enroll_max":"2014-06-29"},"overall":{"customers":2237,"avg_income":52237.0,"median_income":51373.0,"avg_spend":606.0,"median_spend":396.0,"total_spend":1355048,"avg_age":45.1,"median_age":44.0,"min_age":18,"max_age":74,"response_pct":14.9,"any_cmp_pct":20.7,"any_incl_response_pct":27.2,"avg_web_visits":5.32,"avg_purchases":12.5,"complaints":20,"complaint_pct":0.89,"avg_recency":49.1,"avg_kidhome":0.44,"avg_teenhome":0.51,"pct_no_kids_at_all":28.5,"corr_income_spend":0.67,"corr_income_purchases":0.63,"corr_age_income":0.16,"corr_age_response":-0.02,"corr_income_response":0.13,"corr_spend_response":0.27,"corr_webvisits_spend":-0.5},"spend_by_category":{"Wines":{"total":680038,"share_pct":50.2,"avg":304.0},"Fruits":{"total":58767,"share_pct":4.3,"avg":26.0},"Meat":{"total":373393,"share_pct":27.6,"avg":167.0},"Fish":{"total":83939,"share_pct":6.2,"avg":38.0},"Sweets":{"total":60553,"share_pct":4.5,"avg":27.0},"Gold":{"total":98358,"share_pct":7.3,"avg":44.0}},"purchases_by_channel":{"Store":{"total":12962,"avg":5.79,"share_pct":46.2},"Web":{"total":9143,"avg":4.09,"share_pct":32.6},"Catalog":{"total":5956,"avg":2.66,"share_pct":21.2},"Deals":{"total":5205,"avg":2.33,"share_pct":null},"note":"Deals = discounted purchases (a subset across channels), not a 4th channel; share is of Store+Web+Catalog."},"web_visits":{"avg":5.32,"median":6.0,"dist":{"0":11,"1":152,"2":202,"3":205,"4":217,"5":280,"6":340,"7":393,"8":342,"9":83,"10":3,"13":1,"14":2,"17":1,"19":2,"20":3}},"campaigns":{"Cmp1":{"accepted":144,"pct":6.4},"Cmp2":{"accepted":30,"pct":1.3},"Cmp3":{"accepted":163,"pct":7.3},"Cmp4":{"accepted":167,"pct":7.5},"Cmp5":{"accepted":162,"pct":7.2},"Response":{"accepted":334,"pct":14.9},"any_of_5":{"accepted":462,"pct":20.7},"any_incl_response":{"accepted":608,"pct":27.2},"accepts_dist":{"0":1775,"1":324,"2":83,"3":44,"4":11}},"response_by_prior_accepts":{"0":{"n":1775,"response_pct":8.2},"1":{"n":324,"response_pct":31.2},"2":{"n":138,"response_pct":63.0}},"response_by_prior_accepts_labels":{"0":"0 prior accepts","1":"1 prior accept","2":"2+ prior accepts"},"by_education":{"Basic":{"n":54,"avg_income":20306.0,"avg_spend":82.0,"response_pct":3.7,"any_cmp_pct":11.1,"avg_web_visits":6.87,"avg_recency":48.4},"2n Cycle":{"n":201,"avg_income":47625.0,"avg_spend":501.0,"response_pct":10.9,"any_cmp_pct":18.9,"avg_web_visits":5.46,"avg_recency":48.3},"Graduation":{"n":1127,"avg_income":52720.0,"avg_spend":620.0,"response_pct":13.5,"any_cmp_pct":20.4,"avg_web_visits":5.29,"avg_recency":50.0},"Master":{"n":370,"avg_income":52918.0,"avg_spend":612.0,"response_pct":15.4,"any_cmp_pct":20.3,"avg_web_visits":5.18,"avg_recency":47.6},"PhD":{"n":485,"avg_income":56088.0,"avg_spend":670.0,"response_pct":20.8,"any_cmp_pct":23.3,"avg_web_visits":5.27,"avg_recency":48.5}},"by_marital":{"Single":{"n":479,"avg_income":50976.0,"avg_spend":608.0,"response_pct":22.1,"any_cmp_pct":20.5,"avg_web_visits":5.29,"avg_recency":49.6},"Married":{"n":864,"avg_income":51725.0,"avg_spend":591.0,"response_pct":11.3,"any_cmp_pct":21.1,"avg_web_visits":5.36,"avg_recency":48.3},"Together":{"n":579,"avg_income":53193.0,"avg_spend":606.0,"response_pct":10.4,"any_cmp_pct":19.9,"avg_web_visits":5.27,"avg_recency":50.1},"Divorced":{"n":231,"avg_income":52904.0,"avg_spend":613.0,"response_pct":20.8,"any_cmp_pct":19.9,"avg_web_visits":5.49,"avg_recency":49.3},"Widow":{"n":77,"avg_income":56482.0,"avg_spend":739.0,"response_pct":24.7,"any_cmp_pct":24.7,"avg_web_visits":4.88,"avg_recency":49.1},"Other":{"n":7,"avg_income":53280.0,"avg_spend":572.0,"response_pct":42.9,"any_cmp_pct":28.6,"avg_web_visits":5.43,"avg_recency":29.0}},"by_kids":{"0":{"n":637,"avg_income":65677.0,"avg_spend":1105.0,"response_pct":26.5,"any_cmp_pct":36.1,"avg_web_visits":3.48,"avg_recency":49.1},"1":{"n":1126,"avg_income":47712.0,"avg_spend":473.0,"response_pct":10.3,"any_cmp_pct":15.9,"avg_web_visits":5.94,"avg_recency":48.7},"2+":{"n":474,"avg_income":44834.0,"avg_spend":249.0,"response_pct":10.3,"any_cmp_pct":11.2,"avg_web_visits":6.32,"avg_recency":50.1}},"by_kids_note":"Kids = Kidhome + Teenhome (children of any age at home), capped at 2+.","by_age_group":{"18-34":{"n":424,"avg_income":46875.0,"avg_spend":572.0,"response_pct":19.1,"any_cmp_pct":23.1,"avg_web_visits":5.45,"avg_recency":47.7},"35-49":{"n":1030,"avg_income":50600.0,"avg_spend":540.0,"response_pct":13.6,"any_cmp_pct":17.9,"avg_web_visits":5.62,"avg_recency":49.0},"50-64":{"n":676,"avg_income":56245.0,"avg_spend":675.0,"response_pct":12.9,"any_cmp_pct":20.9,"avg_web_visits":4.95,"avg_recency":50.7},"65+":{"n":107,"avg_income":64026.0,"avg_spend":934.0,"response_pct":24.3,"any_cmp_pct":36.4,"avg_web_visits":4.18,"avg_recency":45.6}},"age_hist":{"15-19":7,"20-24":54,"25-29":160,"30-34":203,"35-39":354,"40-44":386,"45-49":290,"50-54":216,"55-59":251,"60-64":209,"65-69":91,"70-74":16,"75-79":0,"80-84":0,"85-89":0},"income_hist":{"0-10k":29,"10-20k":98,"20-30k":243,"30-40k":361,"40-50k":328,"50-60k":314,"60-70k":333,"70-80k":291,"80-90k":162,"90-100k":41,"100-110k":4,"110-120k":1,"120k+":8},"spend_quartiles":{"Q1 (bottom 25%)":{"n":560,"avg_income":32252.0,"avg_spend":39.0,"response_pct":5.7,"any_cmp_pct":7.3,"avg_web_visits":6.48,"avg_recency":49.0,"spend_total":22038,"spend_share_pct":1.6,"min_spend":5,"max_spend":69,"avg_purchases":4.3,"avg_catalog":0.2,"avg_deals":1.64},"Q2":{"n":559,"avg_income":40984.0,"avg_spend":185.0,"response_pct":12.2,"any_cmp_pct":9.5,"avg_web_visits":6.3,"avg_recency":48.7,"spend_total":103408,"spend_share_pct":7.6,"min_spend":69,"max_spend":396,"avg_purchases":8.3,"avg_catalog":1.01,"avg_deals":2.67},"Q3":{"n":559,"avg_income":60419.0,"avg_spend":710.0,"response_pct":11.8,"any_cmp_pct":20.8,"avg_web_visits":4.87,"avg_recency":48.8,"spend_total":396789,"spend_share_pct":29.3,"min_spend":397,"max_spend":1045,"avg_purchases":17.6,"avg_catalog":3.53,"avg_deals":3.13},"Q4 (top 25%)":{"n":559,"avg_income":75223.0,"avg_spend":1490.0,"response_pct":30.1,"any_cmp_pct":45.1,"avg_web_visits":3.62,"avg_recency":50.0,"spend_total":832813,"spend_share_pct":61.5,"min_spend":1047,"max_spend":2525,"avg_purchases":20.0,"avg_catalog":5.91,"avg_deals":1.86}},"top25_vs_rest":{"threshold_spend":1045,"top":{"n":559,"avg_income":75223.0,"avg_spend":1490.0,"response_pct":30.1,"any_cmp_pct":45.1,"avg_web_visits":3.62,"avg_recency":50.0,"spend_total":832813,"spend_share_pct":61.5,"avg_purchases":20.0,"avg_deals":1.86},"rest":{"n":1678,"avg_income":44542.0,"avg_spend":311.0,"response_pct":9.9,"any_cmp_pct":12.5,"avg_web_visits":5.88,"avg_recency":48.8,"spend_total":522235,"spend_share_pct":38.5,"avg_purchases":10.1,"avg_deals":2.48},"bottom50_share_pct":9.3,"top10_share_pct":30.3},"response_by_recency":{"0-24 days":{"n":566,"response_pct":26.5},"25-49":{"n":554,"response_pct":14.3},"50-74":{"n":567,"response_pct":11.3},"75-99":{"n":550,"response_pct":7.5}},"by_income_band":{"<30k":{"n":370,"avg_income":21477.0,"avg_spend":72.0,"response_pct":10.5,"any_cmp_pct":7.0,"avg_web_visits":7.13,"avg_recency":50.0},"30-50k":{"n":689,"avg_income":39756.0,"avg_spend":189.0,"response_pct":12.3,"any_cmp_pct":11.6,"avg_web_visits":6.48,"avg_recency":47.9},"50-70k":{"n":647,"avg_income":60108.0,"avg_spend":756.0,"response_pct":10.4,"any_cmp_pct":19.2,"avg_web_visits":5.0,"avg_recency":49.2},"70-90k":{"n":454,"avg_income":77875.0,"avg_spend":1352.0,"response_pct":25.6,"any_cmp_pct":41.9,"avg_web_visits":2.94,"avg_recency":49.9},"90k+":{"n":53,"avg_income":113506.0,"avg_spend":1577.0,"response_pct":49.1,"any_cmp_pct":71.7,"avg_web_visits":1.94,"avg_recency":46.4}},"complaints":{"n":20,"pct":0.89,"avg_spend_complainers":392.0,"avg_spend_others":608.0,"response_pct_complainers":15.0},"by_enroll_year":{"2012":{"n":494,"avg_income":51150.0,"avg_spend":745.0,"response_pct":26.7,"any_cmp_pct":21.3,"avg_web_visits":6.31,"avg_recency":50.0,"median_income":52050.0},"2013":{"n":1187,"avg_income":52419.0,"avg_spend":601.0,"response_pct":13.0,"any_cmp_pct":19.0,"avg_web_visits":5.28,"avg_recency":49.3,"median_income":51148.0},"2014":{"n":556,"avg_income":52814.0,"avg_spend":491.0,"response_pct":8.6,"any_cmp_pct":23.6,"avg_web_visits":4.53,"avg_recency":47.9,"median_income":51199.0}},"edu_x_marital":{"Basic":{"Single":18,"Married":20,"Together":14,"Divorced":1,"Widow":1,"Other":0},"2n Cycle":{"Single":36,"Married":81,"Together":57,"Divorced":22,"Widow":5,"Other":0},"Graduation":{"Single":252,"Married":433,"Together":286,"Divorced":119,"Widow":35,"Other":2},"Master":{"Single":75,"Married":138,"Together":106,"Divorced":37,"Widow":12,"Other":2},"PhD":{"Single":98,"Married":192,"Together":116,"Divorced":52,"Widow":24,"Other":3}},"wine_by_income_band":{"<30k":{"n":370,"avg_wine":14.0,"avg_spend":72.0},"30-50k":{"n":689,"avg_wine":97.0,"avg_spend":189.0},"50-70k":{"n":647,"avg_wine":431.0,"avg_spend":756.0},"70-90k":{"n":454,"avg_wine":634.0,"avg_spend":1352.0},"90k+":{"n":53,"avg_wine":701.0,"avg_spend":1577.0}},"responders_vs_non":{"responders":{"n":334,"avg_income":60210.0,"avg_spend":987.0,"avg_recency":35.4,"pct_no_kids":50.6,"avg_catalog":4.2,"avg_web":5.07,"avg_store":6.1,"any_prior_cmp_pct":56.3},"non":{"n":1903,"avg_income":50824.0,"avg_spend":539.0,"avg_recency":51.5,"pct_no_kids":24.6,"avg_catalog":2.39,"avg_web":3.91,"avg_store":5.74,"any_prior_cmp_pct":14.4}},"cube":{"dims":{"age":["18-34","35-49","50-64","65+"],"edu":["Basic","2n Cycle","Graduation","Master","PhD"],"kids":["0","1","2+"],"marital":["Single","Married","Together","Divorced","Widow","Other"]},"cols":["age","edu","kids","marital","n","n_income","income_sum","wines","meat","fish","fruits","sweets","gold","store","web","catalog","deals","web_visits","cmp1","cmp2","cmp3","cmp4","cmp5","response","any_cmp","recency_sum","complain"],"rows":[[0,1,0,1,7,7,395665,1332,1228,332,124,263,253,47,26,25,8,29,1,0,1,0,2,2,2,183,0],[0,1,0,0,7,7,486046,3476,2814,356,413,469,572,54,28,31,8,26,1,0,1,1,1,2,3,253,1],[0,1,0,2,6,6,247465,863,1063,647,221,275,140,26,20,17,6,32,0,0,1,0,0,0,1,233,0],[0,1,1,3,1,1,35388,6,7,4,4,3,8,3,1,0,1,7,0,0,0,0,0,0,0,20,0],[0,1,1,1,14,14,408457,459,465,195,176,169,319,55,34,8,33,92,0,0,1,0,0,2,1,705,1],[0,1,1,0,9,9,343072,600,463,162,147,128,223,32,29,8,20,62,0,0,1,0,0,1,1,567,0],[0,1,1,2,10,10,370980,1175,524,762,154,226,344,51,36,17,24,59,0,0,0,1,0,1,1,505,0],[0,1,2,1,3,3,178277,512,269,106,86,29,208,15,14,7,9,17,1,0,1,0,0,1,1,195,0],[0,1,2,0,1,1,42395,48,57,24,13,15,25,4,3,1,4,7,0,0,0,0,0,0,0,35,0],[0,0,0,1,4,4,99110,246,156,272,160,201,157,16,18,3,9,30,0,0,1,0,0,0,1,208,0],[0,0,0,0,2,2,31487,8,18,9,10,19,26,6,2,1,4,11,0,0,0,0,0,0,0,137,0],[0,0,1,1,7,7,141521,20,39,77,54,108,133,19,13,2,14,52,0,0,1,0,0,0,1,254,0],[0,0,1,0,10,10,179667,27,78,102,114,85,211,25,19,6,20,76,0,0,0,0,0,0,0,468,0],[0,0,1,2,1,1,13724,2,5,2,7,15,27,2,2,0,1,9,0,0,1,0,0,0,1,43,0],[0,2,0,3,6,6,424841,2101,2483,173,274,246,479,61,20,33,6,18,0,0,0,1,1,2,2,312,0],[0,2,0,1,38,37,2049674,14100,10670,2602,1971,2019,2826,270,147,151,39,162,8,2,3,2,9,7,12,1573,0],[0,2,0,5,1,1,79244,471,125,212,102,61,245,7,4,10,1,1,1,0,0,0,1,1,1,58,0],[0,2,0,0,34,34,2267154,14295,14144,2765,2123,1530,2440,258,137,166,47,113,6,0,2,5,8,12,11,1977,0],[0,2,0,2,14,14,1062273,8016,6887,1644,1224,1005,1167,112,72,87,14,45,3,1,2,1,4,3,6,494,0],[0,2,1,3,1,1,21846,7,18,6,17,10,26,3,4,0,4,8,0,0,0,0,0,0,0,38,0],[0,2,1,1,51,50,1875690,5116,4250,1148,831,899,1529,209,155,48,108,340,1,0,6,1,2,4,7,2500,0],[0,2,1,5,1,1,34176,5,24,19,7,14,20,4,3,0,4,6,0,0,0,0,0,0,0,12,0],[0,2,1,0,37,35,1177032,1697,1628,590,397,622,1039,137,125,23,75,237,0,0,5,0,0,3,5,1894,0],[0,2,1,2,34,34,1230628,3206,1957,679,379,480,1028,129,114,28,75,238,1,0,2,0,0,5,3,1689,1],[0,2,2,3,1,1,28510,44,19,0,5,4,19,4,2,0,3,5,0,0,0,0,0,0,0,72,0],[0,2,2,1,5,5,202673,583,241,101,84,59,126,25,17,5,19,31,0,0,1,0,0,0,1,290,0],[0,2,2,0,1,1,41967,23,10,0,4,2,15,3,1,0,1,4,0,0,0,0,0,0,0,66,0],[0,2,2,2,3,3,146553,284,298,25,52,40,101,13,13,2,10,23,0,0,0,0,0,1,0,90,0],[0,3,0,3,4,4,162534,1304,1284,103,131,135,176,17,18,10,6,17,0,0,0,0,0,1,0,151,0],[0,3,0,1,6,6,373620,2913,1344,347,273,161,266,44,30,21,6,26,0,0,1,0,1,2,2,244,0],[0,3,0,0,12,12,836648,7882,6084,618,549,556,947,93,37,43,10,43,2,1,3,3,6,7,8,455,0],[0,3,0,2,4,4,282422,2321,1469,397,335,190,220,28,18,20,4,9,2,0,2,0,1,0,2,213,0],[0,3,1,1,11,11,336044,299,252,32,40,27,143,34,19,3,18,75,0,0,2,0,0,1,2,598,0],[0,3,1,0,5,5,144148,138,101,6,22,17,111,13,12,2,12,33,0,0,1,0,0,2,1,186,1],[0,3,1,2,7,7,236637,720,308,35,18,38,114,25,25,2,14,54,0,0,1,0,0,0,1,352,0],[0,3,2,1,1,1,19510,9,7,3,0,4,7,3,1,0,2,7,0,0,0,0,0,0,0,63,0],[0,3,2,0,1,1,19485,6,4,0,0,0,0,2,1,0,1,7,0,0,0,0,0,0,0,80,0],[0,4,0,3,1,1,90687,982,672,23,17,34,51,8,6,2,1,2,0,0,0,0,1,1,1,98,0],[0,4,0,1,16,16,1228805,13231,6946,739,736,676,699,105,77,107,31,55,2,0,2,4,8,6,8,721,0],[0,4,0,0,14,14,839013,6960,4519,570,507,791,416,91,61,40,17,54,5,0,0,2,3,10,6,446,0],[0,4,0,2,9,9,629154,6684,3894,597,260,490,632,89,44,53,8,22,1,1,1,1,1,0,3,488,0],[0,4,1,1,10,10,363245,1936,541,123,62,71,302,46,29,13,26,69,0,0,1,0,0,1,1,407,0],[0,4,1,0,8,7,240015,592,301,39,17,17,163,26,25,8,21,54,0,0,0,0,0,2,0,383,1],[0,4,1,2,6,6,223272,1003,266,18,14,14,50,24,19,8,16,44,0,0,1,1,0,1,2,470,0],[1,1,0,3,3,3,126272,1538,368,118,64,100,254,24,21,10,4,20,0,2,0,2,1,2,2,183,0],[1,1,0,1,9,9,379972,1944,1363,426,315,570,321,47,28,20,11,44,0,0,0,0,2,0,2,498,0],[1,1,0,0,3,3,234965,1196,1688,415,222,239,431,32,13,26,3,7,1,0,0,1,0,1,1,127,0],[1,1,0,2,7,6,317489,1861,3055,414,241,433,737,41,27,23,8,25,1,0,0,2,1,2,2,308,1],[1,1,1,3,8,8,348972,3218,708,193,126,161,453,43,30,18,23,55,0,0,0,1,0,0,1,343,0],[1,1,1,1,21,20,836425,2863,1409,800,778,680,896,119,79,21,56,126,0,0,1,1,0,0,2,1006,0],[1,1,1,0,5,5,245154,860,452,286,75,70,180,24,23,12,8,30,1,0,1,0,0,1,1,179,0],[1,1,1,2,12,12,482728,1851,1056,643,337,445,514,51,58,25,41,75,0,0,2,0,0,0,2,625,0],[1,1,1,4,1,1,47682,162,83,97,61,57,61,8,4,3,4,5,0,0,0,0,0,0,0,80,0],[1,1,2,3,1,1,25959,4,12,7,2,5,26,2,1,2,2,6,0,0,0,0,0,1,0,1,0],[1,1,2,1,11,11,448391,475,315,73,51,34,202,37,19,8,31,64,0,0,1,0,0,0,1,754,0],[1,1,2,0,2,2,93853,20,16,15,4,4,30,4,2,1,3,12,0,0,0,0,0,0,0,32,0],[1,1,2,2,10,10,389579,1208,400,390,81,273,291,44,20,10,43,67,0,0,0,0,0,0,0,531,0],[1,0,0,1,2,2,21688,8,22,27,23,13,43,7,4,0,2,14,0,0,0,0,0,0,0,99,0],[1,0,0,2,3,3,67658,4,26,31,47,13,97,6,5,2,3,23,0,0,0,0,0,0,0,143,0],[1,0,1,3,1,1,9548,0,3,10,1,6,9,3,1,0,2,8,0,0,0,0,0,0,0,31,0],[1,0,1,1,4,4,93396,21,31,46,31,11,38,12,6,1,7,26,0,0,0,0,0,0,0,102,0],[1,0,1,0,4,4,86072,12,34,37,20,35,68,11,6,2,7,25,0,0,0,0,0,0,0,180,0],[1,0,1,2,7,7,159588,16,70,84,60,35,149,18,10,3,11,46,0,0,3,0,0,2,3,377,0],[1,0,2,0,1,1,16014,3,4,7,9,8,7,4,1,1,4,3,0,0,0,0,0,0,0,42,0],[1,2,0,3,14,14,1018970,6357,4394,1196,1331,1211,1216,87,70,65,23,67,6,1,3,2,5,9,7,634,0],[1,2,0,1,27,27,1995709,13345,14053,3102,1771,1779,2031,223,136,137,28,79,9,0,1,2,8,4,13,1434,1],[1,2,0,0,22,22,1253705,6220,6251,1898,1458,988,1384,132,76,65,21,85,1,0,2,1,1,5,3,1175,0],[1,2,0,2,31,31,2409088,17712,15730,3091,2149,2218,2127,249,172,192,29,86,5,3,2,3,12,7,15,1339,0],[1,2,0,4,3,3,180439,1297,1347,369,270,327,63,18,14,16,3,15,0,0,0,1,0,1,1,181,0],[1,2,1,3,38,38,1793223,9482,4577,593,815,863,1470,217,163,78,92,235,1,0,5,1,0,5,6,2149,0],[1,2,1,1,124,124,5709695,32820,14942,3837,2721,3797,5822,703,570,292,326,758,3,1,6,10,2,12,16,6160,1],[1,2,1,0,61,61,2740872,12649,6732,2537,1422,1104,2956,313,239,134,143,371,0,1,7,6,1,8,13,2702,0],[1,2,1,2,66,66,3840807,16812,7914,2460,1618,1561,3487,375,287,147,157,369,2,1,2,6,4,2,11,3513,0],[1,2,1,4,8,8,389451,1443,725,289,277,321,480,46,24,14,14,43,0,0,0,0,0,0,0,492,0],[1,2,2,3,12,12,607448,2007,695,98,113,142,261,46,38,11,40,77,1,0,0,1,1,0,1,654,0],[1,2,2,1,58,57,2519701,7566,3065,629,619,572,1429,265,188,55,218,368,0,0,3,1,0,5,4,2636,0],[1,2,2,0,25,24,1130590,5188,2689,312,270,396,905,129,96,34,113,165,2,0,1,1,0,5,3,1171,2],[1,2,2,2,32,32,1367079,4383,1929,433,337,294,682,134,91,34,104,207,0,0,0,0,0,2,0,1657,0],[1,2,2,4,6,6,256294,831,205,47,29,33,157,22,19,11,28,37,0,0,2,1,0,1,3,170,0],[1,3,0,3,3,3,234971,1851,1456,604,276,192,353,25,12,16,3,6,0,0,0,0,0,1,0,127,0],[1,3,0,1,8,8,576047,5087,3206,482,556,435,402,50,34,39,7,19,3,0,1,1,4,4,5,439,0],[1,3,0,0,8,8,509369,6032,3960,549,331,372,447,70,38,45,11,31,2,0,0,0,0,2,2,415,0],[1,3,0,2,7,6,371728,3876,2517,271,498,279,225,59,25,29,9,23,0,0,0,1,1,0,1,581,0],[1,3,1,3,12,12,568424,3513,640,127,118,97,466,67,61,21,23,77,1,0,0,1,0,0,1,730,0],[1,3,1,1,39,39,1930633,9887,3182,733,376,626,1355,213,146,74,86,216,1,0,7,3,2,5,10,1649,0],[1,3,1,0,19,19,824230,3526,1533,346,297,142,534,108,75,26,39,112,0,0,1,1,0,4,2,800,0],[1,3,1,2,28,27,1341090,6819,1984,639,275,312,855,140,112,56,62,163,0,0,0,2,0,5,2,900,0],[1,3,1,4,1,1,67369,1298,70,37,0,14,42,10,7,4,4,4,0,0,0,1,1,1,1,81,0],[1,3,2,3,6,6,266357,959,430,39,21,30,267,26,23,12,29,42,0,0,0,0,0,3,0,189,0],[1,3,2,1,21,21,980417,4236,962,128,39,229,633,102,91,26,103,139,0,0,0,1,0,0,1,944,0],[1,3,2,0,9,9,369354,519,185,8,2,8,154,28,19,8,28,66,0,0,0,0,0,1,0,526,0],[1,3,2,2,10,9,432095,2009,457,149,67,106,362,44,42,22,51,60,0,0,0,1,0,0,1,553,0],[1,3,2,4,1,1,51390,205,47,23,20,2,56,5,5,2,6,5,0,0,0,0,0,0,0,54,0],[1,4,0,3,2,2,161144,1585,1075,81,112,95,47,15,10,9,2,4,0,0,1,0,0,1,1,76,0],[1,4,0,1,19,19,1386263,11338,9193,1177,1033,1319,826,160,78,106,21,45,3,0,1,1,7,4,7,934,0],[1,4,0,0,8,8,571340,5409,4664,617,414,617,186,73,32,48,12,18,0,0,1,0,0,4,1,621,0],[1,4,0,2,9,9,650046,6039,4349,613,407,457,432,74,55,47,12,36,1,0,0,2,1,3,2,319,0],[1,4,1,3,14,14,633177,4126,998,367,268,190,668,91,68,27,38,87,0,0,1,1,0,3,2,535,0],[1,4,1,1,57,57,3070278,23411,7517,897,996,700,1451,361,264,169,142,337,3,3,6,8,1,9,15,2803,0],[1,4,1,5,2,2,96864,644,100,8,6,6,84,12,14,2,10,16,0,0,0,0,0,1,0,6,0],[1,4,1,0,18,18,836722,6172,1075,233,131,121,659,96,73,41,42,112,0,0,2,0,0,3,2,986,0],[1,4,1,2,31,30,1390007,7141,2138,227,117,174,462,145,108,42,62,196,0,0,1,1,0,3,2,1648,0],[1,4,1,4,3,3,163409,1374,290,128,77,115,132,26,14,6,11,18,0,0,0,0,0,0,0,170,0],[1,4,2,3,10,10,500571,1682,546,102,93,37,201,44,28,8,22,59,0,0,3,0,0,1,3,454,0],[1,4,2,1,19,19,939418,3060,1458,365,184,102,470,91,76,24,70,124,0,0,1,3,1,4,4,1134,0],[1,4,2,5,1,1,35860,15,8,4,0,2,20,2,1,1,2,5,0,0,1,0,0,1,1,37,0],[1,4,2,0,12,12,481108,582,303,47,24,20,535,33,49,6,30,72,0,0,2,0,0,2,2,698,0],[1,4,2,2,11,11,628893,1378,423,40,24,33,74,45,28,9,23,57,0,0,3,0,0,0,3,353,0],[2,1,0,3,3,3,228600,929,1428,111,115,293,233,28,17,16,3,10,1,0,0,0,1,2,2,145,0],[2,1,0,1,9,9,645658,3500,4050,1064,485,424,958,78,53,64,10,28,6,0,3,0,0,2,7,306,0],[2,1,0,0,2,2,117703,640,626,57,50,19,84,9,8,7,2,9,0,0,1,0,0,1,1,100,0],[2,1,0,2,5,5,279861,1805,1044,433,320,196,206,47,20,23,6,19,0,0,0,0,1,0,1,341,0],[2,1,0,4,1,1,28457,24,108,29,1,29,14,4,4,1,1,8,0,0,0,0,0,0,0,96,0],[2,1,1,3,4,4,261149,2267,866,314,262,348,119,29,31,7,11,28,0,0,0,0,1,0,1,113,0],[2,1,1,1,6,6,322199,1002,301,301,184,132,678,32,28,12,13,31,0,0,0,0,0,1,0,277,0],[2,1,1,0,3,3,165772,413,158,53,127,151,83,20,10,4,5,15,0,0,0,0,0,0,0,68,0],[2,1,1,2,4,4,259189,1627,556,217,260,227,104,36,25,17,13,16,0,0,0,0,0,0,0,162,0],[2,1,1,4,1,1,59184,341,113,259,142,151,66,12,6,6,3,5,0,0,0,0,0,0,0,6,0],[2,1,2,3,2,2,73108,100,69,10,9,18,32,7,5,2,9,12,0,0,0,0,0,0,0,137,0],[2,1,2,0,4,3,143120,507,285,88,101,96,179,13,10,4,13,23,0,0,0,0,0,0,0,247,0],[2,1,2,2,3,3,157948,350,91,18,21,17,42,13,10,2,12,19,0,0,0,1,0,0,1,228,0],[2,1,2,4,1,1,46779,12,3,0,1,0,7,2,0,1,1,4,0,0,0,0,0,0,0,55,0],[2,0,0,1,3,3,83495,9,92,137,41,77,164,11,8,2,4,19,0,0,0,0,0,0,0,249,0],[2,0,0,2,1,1,13084,2,7,3,0,7,10,3,1,0,1,6,0,0,0,0,0,0,0,29,0],[2,0,0,4,1,1,22123,3,24,34,3,7,31,3,2,1,1,5,0,0,0,0,0,0,0,77,0],[2,0,1,2,1,1,14918,3,3,15,3,4,15,3,1,0,1,6,0,0,0,0,0,0,0,52,0],[2,0,2,0,1,1,15056,6,3,21,12,6,40,3,2,2,5,5,0,0,0,0,0,0,0,76,0],[2,2,0,3,11,11,646290,3411,3094,907,292,472,419,61,31,37,11,36,1,1,1,2,1,1,3,666,0],[2,2,0,1,40,40,2489472,14347,13879,3270,2054,2239,2764,265,134,192,42,129,6,1,2,3,5,5,12,2268,0],[2,2,0,0,28,28,1841242,14650,11172,1929,1545,1719,2219,196,144,155,33,117,3,2,2,1,3,14,7,1558,0],[2,2,0,2,22,22,1594709,12594,9051,1838,978,1205,2400,163,99,105,22,61,8,0,1,2,6,3,11,1041,0],[2,2,0,4,5,5,317286,2678,2444,302,134,168,547,37,25,26,9,20,1,0,1,0,1,2,1,258,0],[2,2,1,3,23,23,1421365,11482,3549,1301,997,891,1640,165,140,95,63,113,0,0,2,1,0,1,3,1125,0],[2,2,1,1,51,50,3013426,20557,8232,2148,2068,1525,4070,384,309,167,139,262,4,0,3,6,1,2,12,2446,1],[2,2,1,0,29,28,1506568,8822,3672,974,763,741,1496,182,139,84,88,156,1,0,4,3,1,3,7,1493,0],[2,2,1,2,46,46,2562535,18760,6069,1568,1222,1397,2508,327,236,143,137,238,3,2,1,6,2,4,8,2435,3],[2,2,1,4,6,6,362850,2126,684,175,130,333,299,34,30,17,13,25,0,0,0,1,0,0,1,341,0],[2,2,2,3,12,12,476946,756,523,173,64,100,294,47,24,12,30,71,0,0,1,0,0,1,1,570,1],[2,2,2,1,28,28,1257855,4671,1475,233,209,190,544,127,89,31,86,176,0,0,2,3,1,1,5,1631,3],[2,2,2,0,13,11,497828,1349,714,161,181,70,329,53,41,13,43,83,0,0,0,0,0,2,0,624,1],[2,2,2,2,28,27,1089745,3697,1225,248,155,197,608,111,82,31,99,168,1,0,2,2,0,2,5,1618,0],[2,2,2,4,3,3,139472,258,291,64,15,47,98,12,12,3,10,21,0,0,0,0,0,1,0,121,0],[2,3,0,3,2,2,109866,1023,221,16,13,15,66,13,4,5,2,7,0,0,0,1,0,0,1,70,0],[2,3,0,1,9,9,655812,4788,3568,830,779,670,551,76,39,58,11,26,2,0,0,0,0,0,2,309,0],[2,3,0,5,1,1,65487,240,500,199,67,0,163,6,3,5,3,2,0,0,0,0,0,0,0,48,0],[2,3,0,0,7,7,531092,4534,3935,826,179,340,396,65,35,42,5,20,0,0,0,3,0,0,3,340,0],[2,3,0,2,12,12,742283,5767,3439,1018,484,489,784,80,40,57,15,33,0,0,0,0,3,1,3,794,0],[2,3,0,4,2,2,118004,267,845,171,119,166,291,12,12,11,4,11,1,0,0,1,1,2,1,88,0],[2,3,1,3,6,6,338585,1917,778,145,144,129,321,37,22,23,15,24,0,0,0,0,0,1,0,370,0],[2,3,1,1,20,20,1152806,8358,2565,468,283,356,978,141,97,62,60,96,1,0,2,2,1,1,4,1023,0],[2,3,1,0,5,5,316909,3129,854,321,95,200,302,40,25,21,15,23,0,0,0,1,0,1,1,339,0],[2,3,1,2,18,17,909786,5140,1431,315,233,266,613,115,75,37,46,89,0,1,0,2,1,0,3,840,0],[2,3,1,4,2,2,109417,690,54,7,9,5,76,12,11,4,6,12,0,0,0,1,0,0,1,33,0],[2,3,2,3,3,3,146129,337,183,52,22,19,35,13,12,3,11,19,0,0,0,0,0,0,0,127,0],[2,3,2,1,11,11,528268,1615,336,72,52,22,115,48,34,11,22,63,0,0,0,1,0,0,1,528,0],[2,3,2,5,1,1,61331,534,47,0,5,5,41,6,11,1,5,8,0,0,0,0,0,0,0,42,0],[2,3,2,0,7,7,294247,529,197,28,11,23,116,27,17,2,16,45,0,0,0,0,0,0,0,403,0],[2,3,2,2,14,14,614682,2093,1099,184,211,209,382,75,58,15,65,87,0,0,1,0,0,3,1,893,0],[2,3,2,4,1,1,73705,612,520,258,91,107,107,8,9,6,2,5,0,0,0,0,0,0,0,86,0],[2,4,0,3,5,5,364188,3126,1638,617,396,118,185,47,24,29,5,14,1,0,0,0,0,4,1,230,0],[2,4,0,1,4,4,298385,1830,1450,239,214,68,279,24,25,20,4,14,1,0,0,1,2,1,2,207,0],[2,4,0,0,9,8,570920,6542,2419,559,350,234,290,64,41,48,10,32,3,1,1,2,2,3,6,446,0],[2,4,0,2,7,7,539295,4725,2469,424,264,213,231,46,29,50,6,13,1,1,0,2,2,2,2,398,0],[2,4,0,4,4,4,298869,3359,1472,226,139,169,373,32,15,22,3,9,0,1,0,1,2,2,2,73,0],[2,4,1,3,10,10,544712,5442,1122,231,186,101,409,60,56,32,44,53,0,0,0,3,0,3,3,514,0],[2,4,1,1,28,27,1646386,14891,3625,762,421,520,638,211,173,99,72,142,2,0,1,1,0,3,4,1288,0],[2,4,1,0,9,9,493144,4601,803,88,68,137,310,76,46,28,26,50,1,0,0,1,0,1,2,356,0],[2,4,1,2,18,18,975864,9374,1898,332,228,216,726,132,79,61,37,103,0,0,0,2,0,1,2,865,0],[2,4,1,4,6,6,381779,3582,893,100,47,63,462,44,44,27,17,38,0,0,0,1,1,2,1,202,0],[2,4,2,3,5,5,232017,1893,215,38,14,40,305,21,16,9,20,35,0,1,1,0,1,3,1,138,0],[2,4,2,1,23,22,992292,3746,1266,177,134,138,499,97,69,20,103,155,0,0,0,0,0,3,0,965,0],[2,4,2,0,11,11,478297,1083,301,48,16,9,92,41,29,8,39,70,0,0,0,1,0,1,1,575,0],[2,4,2,2,12,12,537595,2258,425,41,60,15,230,44,39,11,37,89,0,2,4,0,0,1,4,541,0],[2,4,2,4,4,4,181880,223,92,37,9,7,43,15,8,3,12,18,0,0,0,0,0,0,0,178,0],[3,1,0,1,1,1,81044,450,535,73,26,98,26,10,5,6,1,1,0,0,0,0,0,0,0,0,0],[3,1,0,4,1,1,74859,570,614,133,73,102,73,11,6,5,1,3,1,0,0,0,0,0,1,63,0],[3,0,0,2,1,1,28389,1,3,7,5,4,8,2,1,0,1,7,0,0,0,0,0,0,0,49,0],[3,2,0,1,11,11,679416,4917,3329,848,417,492,497,73,38,51,11,29,2,0,1,2,3,3,5,258,0],[3,2,0,0,2,2,168299,1449,518,197,81,232,104,23,6,14,2,2,0,0,0,0,1,0,1,142,0],[3,2,0,2,8,8,494336,3399,2989,970,444,369,535,62,46,29,10,35,1,0,0,2,1,2,2,259,0],[3,2,0,4,4,4,278391,1820,1224,430,239,340,344,37,16,25,4,7,1,0,0,1,1,1,2,256,0],[3,2,1,3,1,1,49160,122,43,25,21,10,15,6,3,1,2,6,0,0,0,0,0,0,0,29,0],[3,2,1,2,2,2,93414,446,105,14,4,17,47,11,8,3,4,11,0,0,0,0,0,0,0,119,0],[3,3,0,3,1,1,35416,248,81,4,3,3,51,5,7,1,3,8,0,0,0,0,0,0,0,62,0],[3,3,0,1,7,7,513072,4641,2645,434,281,311,375,69,37,37,7,20,1,0,0,1,2,1,2,215,1],[3,3,0,0,2,2,169310,2469,1027,223,57,95,81,24,16,12,1,6,0,0,0,0,2,1,2,100,0],[3,3,0,2,4,4,284572,2333,2373,194,356,161,263,20,12,18,4,6,0,0,0,1,1,1,1,207,0],[3,3,0,4,3,2,123433,1666,1138,360,170,152,274,28,11,13,5,7,1,0,0,0,1,2,2,201,0],[3,3,1,1,2,2,125145,1185,537,3,82,18,223,13,16,5,5,12,1,0,0,0,0,0,1,115,0],[3,3,1,2,2,2,99824,1040,446,64,16,98,84,14,20,10,8,16,0,0,2,0,0,2,2,10,0],[3,3,1,4,1,1,51529,400,35,6,4,0,22,5,9,1,2,8,0,0,0,0,0,0,0,14,0],[3,3,2,1,3,3,162098,2207,94,3,1,2,71,22,7,8,23,22,0,0,0,2,0,1,2,17,0],[3,3,2,4,1,1,47570,67,20,0,1,2,31,2,2,2,3,7,0,0,0,0,0,1,0,3,0],[3,4,0,3,3,3,153510,1378,543,328,29,98,110,16,23,24,5,19,0,0,2,1,0,2,3,191,0],[3,4,0,1,10,10,797337,7540,3313,682,332,207,528,57,54,48,10,36,2,0,0,2,2,1,3,712,0],[3,4,0,0,7,7,520926,3006,756,213,230,630,175,54,59,24,6,26,2,0,0,0,2,3,2,236,0],[3,4,0,2,3,3,229318,2183,1646,161,119,110,123,19,17,17,3,7,0,0,1,1,1,1,2,149,0],[3,4,0,4,3,3,221577,1399,937,350,428,270,144,27,17,15,2,8,0,0,0,0,0,0,0,167,0],[3,4,1,1,4,4,227881,1251,277,26,60,18,93,25,12,7,8,21,0,0,0,1,0,0,1,238,0],[3,4,1,0,1,1,60200,502,132,0,19,6,26,11,6,2,6,6,0,0,0,0,0,0,0,3,0],[3,4,1,2,6,6,392439,2874,1652,126,224,226,385,58,38,26,15,29,0,0,1,0,0,0,1,356,0],[3,4,1,4,4,4,199400,1727,297,26,59,17,78,22,30,11,11,28,0,0,1,1,0,3,2,238,0],[3,4,2,3,2,2,81018,152,102,7,2,2,30,7,6,1,6,13,0,0,0,0,0,0,0,98,0],[3,4,2,1,2,2,95936,429,134,0,22,10,61,14,6,3,6,9,0,0,0,0,0,0,0,127,0],[3,4,2,0,1,1,26518,20,28,3,1,3,2,3,2,0,3,8,0,0,0,0,0,1,0,33,0],[3,4,2,2,4,4,221390,1350,198,30,30,38,92,18,24,16,18,24,2,0,0,0,0,0,2,216,0]]},"priority_segment":{"definition":"accepted any of the 5 earlier campaigns OR bought within the last 24 days","n":910,"response_pct":28.7,"rest_n":1327,"rest_response_pct":5.5,"share_of_responders_pct":78.1,"share_of_customers_pct":40.7},"findings":[{"title":"A quarter of customers drive 61.5% of spend.","text":"The top 559 customers (two-year spend of $1,047 or more) account for $833K of the $1.36M total. The bottom half of customers account for just 9.3%."},{"title":"Wine and meat are 78% of the basket.","text":"Wines are 50.2% of spend ($680K) and meat 27.6% ($373K). Fish, gold, sweets and fruit together are the remaining 22%."},{"title":"The last campaign converted 14.9%, about double any earlier one.","text":"334 of 2,237 customers accepted the final offer. Campaigns 1-5 ran at 6.4%, 1.3%, 7.3%, 7.5% and 7.2%. 20.7% of customers accepted at least one of the five earlier offers; 27.2% accepted at least one of all six."},{"title":"Past acceptance is the best predictor of the next yes.","text":"Customers with two or more prior accepts responded at 63.0%, one prior accept at 31.2%, and none at 8.2%."},{"title":"Recent buyers respond 3.5x more often.","text":"Customers who bought in the last 24 days responded at 26.5%, versus 7.5% for those 75 or more days since their last purchase."},{"title":"Households with no kids at home spend 2-4x more.","text":"Average spend is $1,105 with no kids at home, $473 with one, and $249 with two or more, and they respond at 26.5% versus 10.3%. Income is the engine underneath: the income-to-spend correlation is 0.67."},{"title":"Age barely matters, and web browsing does not convert.","text":"Age has a -0.02 correlation with response. Stores take 46% of purchases, web 33% and catalog 21%, yet the heaviest web visitors are the lowest spenders (correlation -0.50)."}],"recommendations":[{"title":"Build the next campaign list from behavior, not demographics.","text":"Prior accepters plus anyone who bought in the last 24 days is 910 customers (41% of the base). They responded at 28.7% and produced 78% of all responders; everyone else converted at 5.5%. Contact the 910 first and use the rest for a smaller, cheaper test."},{"title":"Protect the top quartile with a retention program, not discounts.","text":"559 customers carry 61.5% of spend. They buy through the catalog far more than the bottom quartile (5.9 vs 0.2 purchases) and use the fewest deals (1.9 vs 2.5 for everyone else). A loyalty tier, early access and catalog-led wine and meat offers fit them; blanket discounts do not."},{"title":"Fix web conversion for family households.","text":"Homes with one or more kids visit the site about 6 times a month but spend the least ($473 and $249) and lean on deals (2.5 and 3.6 per customer). Put the deal-driven offers on the web where these customers already are, and track web purchases per visit as the KPI."},{"title":"Lead with wine and meat, and split the creative by household.","text":"Two categories are 78% of spend. Run one version for no-kids, higher-income households (premium wine, catalog) and one for family households (bundles and deals online), and report response by segment rather than one overall rate."}]}</script>
+<script>
+(function () {
+  'use strict';
+  var DATA = JSON.parse(document.getElementById('data').textContent);
+  var CUBE = DATA.cube, ROWS = CUBE.rows, DIMS = CUBE.dims;
+  var COL = {}; CUBE.cols.forEach(function (c, i) { COL[c] = i; });
+  var CATS = [['Wines','wines'],['Meat','meat'],['Fish','fish'],['Gold','gold'],['Sweets','sweets'],['Fruits','fruits']];
+  var CHANNELS = [['Store','store'],['Web','web'],['Catalog','catalog'],['Deals','deals']];
+  var CMPS = [['Cmp 1','cmp1'],['Cmp 2','cmp2'],['Cmp 3','cmp3'],['Cmp 4','cmp4'],['Cmp 5','cmp5'],['Response','response']];
+  var MAR_OPTS = ['Single','Married','Together','Divorced','Widow'];
+
+  // ---------- helpers
+  var fmtInt = function (n) { return Math.round(n).toLocaleString('en-US'); };
+  var fmtUSD = function (n) { return '$' + fmtInt(n); };
+  var fmtPct = function (n, d) { return (isFinite(n) ? n.toFixed(d == null ? 1 : d) : '0') + '%'; };
+  var cssVar = function (name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); };
+  var hexA = function (hex, a) { var h = hex.replace('#',''); if (h.length === 3) h = h.split('').map(function(c){return c+c;}).join(''); var r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16); return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')'; };
+
+  // ---------- filters
+  var state = { age: -1, edu: -1, kids: -1, marital: -1 };
+  var selects = Array.prototype.slice.call(document.querySelectorAll('#filters select'));
+  selects.forEach(function (sel) {
+    var dim = sel.getAttribute('data-dim');
+    var opts = DIMS[dim].map(function (v, i) { return [i, v]; });
+    if (dim === 'marital') opts = opts.filter(function (o) { return MAR_OPTS.indexOf(o[1]) >= 0; });
+    var html = '<option value="-1">All</option>';
+    opts.forEach(function (o) { html += '<option value="' + o[0] + '">' + o[1] + '</option>'; });
+    sel.innerHTML = html;
+    sel.addEventListener('change', function () { state[dim] = parseInt(sel.value, 10); render(); });
+  });
+  document.getElementById('resetBtn').addEventListener('click', function () {
+    selects.forEach(function (s) { s.value = '-1'; state[s.getAttribute('data-dim')] = -1; });
+    render();
+  });
+
+  function matches(row, ignore) {
+    return (ignore === 'age' || state.age < 0 || row[0] === state.age) &&
+           (ignore === 'edu' || state.edu < 0 || row[1] === state.edu) &&
+           (ignore === 'kids' || state.kids < 0 || row[2] === state.kids) &&
+           (ignore === 'marital' || state.marital < 0 || row[3] === state.marital);
+  }
+  function sumRows(ignore, extra) {
+    var acc = {}; CUBE.cols.forEach(function (c) { acc[c] = 0; });
+    for (var i = 0; i < ROWS.length; i++) {
+      var r = ROWS[i];
+      if (!matches(r, ignore)) continue;
+      if (extra && !extra(r)) continue;
+      for (var j = 4; j < r.length; j++) acc[CUBE.cols[j]] += r[j];
+    }
+    acc.spend = 0; CATS.forEach(function (c) { acc.spend += acc[c[1]]; });
+    return acc;
+  }
+
+  // ---------- charts
+  var charts = {};
+  var theme = {};
+  var ANIM = 350;
+  function readTheme() {
+    var dark = cssVar('--accent').toLowerCase() === '#6fb3ac';
+    theme = { dark: dark, accent: cssVar('--accent'), accent2: dark ? '#4a8a84' : '#6fb3ac', soft: dark ? '#2b5d63' : '#dfeae9', lime: '#d9e021', grey: cssVar('--muted'), text: cssVar('--text'), muted: cssVar('--muted'), border: cssVar('--border'), surface: cssVar('--surface') };
+  }
+  var HAS_CHART = typeof window.Chart !== 'undefined';
+  if (HAS_CHART) { Chart.defaults.font.family = "'IBM Plex Sans', system-ui, sans-serif"; Chart.defaults.font.size = 12; }
+  else { document.querySelectorAll('.chart-card').forEach(function (c) { c.classList.add('show-table'); var b = c.querySelector('.tbl-btn'); if (b) { b.setAttribute('aria-pressed', 'true'); b.textContent = 'Chart'; } }); }
+
+  // bar-end value labels (selective: bars are few, value at the tip)
+  var endLabels = {
+    id: 'endLabels',
+    afterDatasetsDraw: function (chart) {
+      var ctx = chart.ctx, horiz = chart.options.indexAxis === 'y';
+      var fmt = chart.$endLabelFmt;
+      if (!fmt) return;
+      ctx.save(); ctx.font = "500 11px 'IBM Plex Sans', system-ui, sans-serif"; ctx.fillStyle = theme.muted;
+      chart.data.datasets.forEach(function (ds, di) {
+        var meta = chart.getDatasetMeta(di); if (meta.hidden) return;
+        meta.data.forEach(function (bar, i) {
+          var v = ds.data[i]; if (v == null) return;
+          var txt = fmt(v);
+          if (horiz) { ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(txt, bar.x + 6, bar.y); }
+          else { ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText(txt, bar.x, bar.y - 4); }
+        });
+      });
+      ctx.restore();
+    }
+  };
+
+  function barOpts(horiz, fmtTick, fmtLabel, tooltipFmt) {
+    var valueAxis = { grid: { color: theme.border, lineWidth: 1, drawTicks: false }, border: { display: false }, ticks: { color: theme.muted, callback: fmtTick, maxTicksLimit: 6, padding: 6 }, beginAtZero: true, grace: horiz ? '18%' : '14%' };
+    var catAxis = { grid: { display: false }, border: { display: false }, ticks: { color: theme.text, padding: 4, autoSkip: false, maxRotation: 0, font: { size: 11 } } };
+    return {
+      indexAxis: horiz ? 'y' : 'x', responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 4, right: horiz ? 8 : 0 } },
+      animation: { duration: ANIM },
+      scales: horiz ? { x: valueAxis, y: catAxis } : { x: catAxis, y: valueAxis },
+      plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor: theme.surface, titleColor: theme.text, bodyColor: theme.text, borderColor: theme.border, borderWidth: 1, padding: 10, displayColors: false, callbacks: { label: function (c) { return tooltipFmt(c.parsed[horiz ? 'x' : 'y'], c); } } }
+      },
+      datasets: { bar: { maxBarThickness: 24, borderRadius: 4, borderSkipped: 'start', categoryPercentage: 0.7, barPercentage: 0.9 } }
+    };
+  }
+  function makeBar(id, labels, values, colors, horiz, fmtTick, fmtLabel, tooltipFmt, tall) {
+    if (!HAS_CHART) return;
+    if (charts[id]) { charts[id].destroy(); }
+    var el = document.getElementById(id);
+    charts[id] = new Chart(el, {
+      type: 'bar',
+      data: { labels: labels, datasets: [{ data: values, backgroundColor: colors, hoverBackgroundColor: colors.map ? colors.map(function (c) { return hexA(c, 0.8); }) : hexA(colors, 0.8) }] },
+      options: barOpts(horiz, fmtTick, fmtLabel, tooltipFmt),
+      plugins: [endLabels]
+    });
+    charts[id].$endLabelFmt = fmtLabel;
+    charts[id].update('none');
+  }
+  function setTable(cardId, head, rows) {
+    var el = document.querySelector('#' + cardId + ' .tbl');
+    var h = '<table><thead><tr>' + head.map(function (x, i) { return '<th class="' + (i ? 'num' : '') + '">' + x + '</th>'; }).join('') + '</tr></thead><tbody>';
+    rows.forEach(function (r) { h += '<tr>' + r.map(function (x, i) { return '<td class="' + (i ? 'num' : '') + '">' + x + '</td>'; }).join('') + '</tr>'; });
+    el.innerHTML = h + '</tbody></table>';
+  }
+  function setEmpty(cardId, empty) { document.getElementById(cardId).classList.toggle('is-empty', empty); }
+  function setAria(id, txt) { document.getElementById(id).setAttribute('aria-label', txt); }
+
+  document.querySelectorAll('.tbl-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var card = b.closest('.chart-card'); var on = !card.classList.contains('show-table');
+      card.classList.toggle('show-table', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.textContent = on ? 'Chart' : 'Table';
+    });
+  });
+
+  // ---------- render
+  function render() {
+    var t = sumRows();
+    var n = t.n;
+    document.getElementById('nCount').innerHTML = 'n = ' + fmtInt(n) + ' <small>customers</small>';
+    document.getElementById('kCust').textContent = fmtInt(n);
+    document.getElementById('kInc').textContent = n && t.n_income ? fmtUSD(t.income_sum / t.n_income) : '–';
+    document.getElementById('kSpend').textContent = n ? fmtUSD(t.spend / n) : '–';
+    document.getElementById('kResp').textContent = n ? fmtPct(100 * t.response / n) : '–';
+    document.getElementById('kAny').textContent = n ? fmtPct(100 * t.any_cmp / n) : '–';
+    document.getElementById('kWeb').textContent = n ? (t.web_visits / n).toFixed(1) : '–';
+    var empty = n === 0;
+    ['c1','c2','c3','c4','c5'].forEach(function (c) { setEmpty(c, empty); });
+
+    // 1 spend by category (sorted desc, single hue)
+    var cats = CATS.map(function (c) { return { label: c[0], v: t[c[1]] }; }).sort(function (a, b) { return b.v - a.v; });
+    makeBar('ch1', cats.map(function (c) { return c.label; }), cats.map(function (c) { return c.v; }), theme.accent, true,
+      function (v) { return '$' + (v >= 1000 ? Math.round(v / 1000) + 'K' : v); },
+      function (v) { return t.spend ? fmtPct(100 * v / t.spend, 0) : ''; },
+      function (v, c) { return fmtUSD(v) + ' · ' + (t.spend ? fmtPct(100 * v / t.spend) : '0%') + ' of spend'; });
+    setTable('c1', ['Category', 'Total spend', 'Share', 'Avg per customer'], cats.map(function (c) { return [c.label, fmtUSD(c.v), t.spend ? fmtPct(100 * c.v / t.spend) : '–', n ? fmtUSD(c.v / n) : '–']; }));
+    setAria('ch1', 'Bar chart of spend by product category for ' + fmtInt(n) + ' customers: ' + cats.map(function (c) { return c.label + ' ' + fmtUSD(c.v); }).join(', ') + '.');
+
+    // 2 channels (avg per customer)
+    var chv = CHANNELS.map(function (c) { return n ? t[c[1]] / n : 0; });
+    makeBar('ch2', CHANNELS.map(function (c) { return c[0]; }), chv, [theme.accent, theme.accent, theme.accent, theme.grey], false,
+      function (v) { return v; }, function (v) { return v.toFixed(1); }, function (v) { return v.toFixed(2) + ' purchases per customer'; });
+    var ch3sum = t.store + t.web + t.catalog;
+    setTable('c2', ['Channel', 'Avg per customer', 'Total purchases', 'Share of 3 channels'], CHANNELS.map(function (c, i) { return [c[0], chv[i].toFixed(2), fmtInt(t[c[1]]), c[1] === 'deals' ? '–' : (ch3sum ? fmtPct(100 * t[c[1]] / ch3sum) : '–')]; }));
+    setAria('ch2', 'Bar chart of average purchases per customer by channel: ' + CHANNELS.map(function (c, i) { return c[0] + ' ' + chv[i].toFixed(1); }).join(', ') + '.');
+
+    // 3 campaigns
+    var cmv = CMPS.map(function (c) { return n ? 100 * t[c[1]] / n : 0; });
+    makeBar('ch3', CMPS.map(function (c) { return c[0]; }), cmv, [theme.accent, theme.accent, theme.accent, theme.accent, theme.accent, theme.lime], false,
+      function (v) { return v + '%'; }, function (v) { return fmtPct(v); }, function (v, c) { return fmtPct(v) + ' accepted (' + fmtInt(t[CMPS[c.dataIndex][1]]) + ' of ' + fmtInt(n) + ')'; });
+    setTable('c3', ['Campaign', 'Accepted', 'Rate'], CMPS.map(function (c, i) { return [c[0], fmtInt(t[c[1]]), fmtPct(cmv[i])]; }).concat([['Any of campaigns 1–5', fmtInt(t.any_cmp), n ? fmtPct(100 * t.any_cmp / n) : '–']]));
+    setAria('ch3', 'Bar chart of campaign acceptance rates: ' + CMPS.map(function (c, i) { return c[0] + ' ' + fmtPct(cmv[i]); }).join(', ') + '.');
+
+    // 4 response by age group (ignore age filter)
+    var ag = DIMS.age.map(function (label, i) { var s = sumRows('age', function (r) { return r[0] === i; }); return { label: label, n: s.n, v: s.n ? 100 * s.response / s.n : 0, spend: s.n ? s.spend / s.n : 0 }; });
+    var agEmpty = ag.every(function (g) { return g.n === 0; });
+    setEmpty('c4', agEmpty);
+    makeBar('ch4', ag.map(function (g) { return g.label; }), ag.map(function (g) { return g.v; }), theme.accent, false,
+      function (v) { return v + '%'; }, function (v) { return fmtPct(v); }, function (v, c) { var g = ag[c.dataIndex]; return fmtPct(v) + ' of ' + fmtInt(g.n) + ' customers'; });
+    setTable('c4', ['Age group', 'Customers', 'Response rate', 'Avg spend'], ag.map(function (g) { return [g.label, fmtInt(g.n), fmtPct(g.v), fmtUSD(g.spend)]; }));
+    setAria('ch4', 'Bar chart of last-campaign response rate by age group: ' + ag.map(function (g) { return g.label + ' ' + fmtPct(g.v); }).join(', ') + '.');
+
+    // 5 avg spend by education (ignore edu filter)
+    var ed = DIMS.edu.map(function (label, i) { var s = sumRows('edu', function (r) { return r[1] === i; }); return { label: label, n: s.n, v: s.n ? s.spend / s.n : 0, inc: s.n_income ? s.income_sum / s.n_income : 0, resp: s.n ? 100 * s.response / s.n : 0 }; });
+    setEmpty('c5', ed.every(function (g) { return g.n === 0; }));
+    makeBar('ch5', ed.map(function (g) { return g.label; }), ed.map(function (g) { return g.v; }), theme.accent, false,
+      function (v) { return '$' + fmtInt(v); }, function (v) { return fmtUSD(v); }, function (v, c) { var g = ed[c.dataIndex]; return fmtUSD(v) + ' avg spend · ' + fmtInt(g.n) + ' customers'; });
+    setTable('c5', ['Education', 'Customers', 'Avg spend', 'Avg income', 'Response rate'], ed.map(function (g) { return [g.label, fmtInt(g.n), fmtUSD(g.v), fmtUSD(g.inc), fmtPct(g.resp)]; }));
+    setAria('ch5', 'Bar chart of average two-year spend by education: ' + ed.map(function (g) { return g.label + ' ' + fmtUSD(g.v); }).join(', ') + '.');
+  }
+
+  // ---------- static charts (full dataset)
+  function renderStatic() {
+    var q = DATA.spend_quartiles, order = ['Q4 (top 25%)', 'Q3', 'Q2', 'Q1 (bottom 25%)'];
+    var cols = [theme.accent, theme.accent2, theme.soft, theme.grey];
+    if (charts.ch6) charts.ch6.destroy();
+    if (HAS_CHART) charts.ch6 = new Chart(document.getElementById('ch6'), {
+      type: 'doughnut',
+      data: { labels: order, datasets: [{ data: order.map(function (k) { return q[k].spend_share_pct; }), backgroundColor: cols, borderColor: theme.surface, borderWidth: 2, hoverOffset: 4 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '64%', animation: { duration: ANIM },
+        plugins: { legend: { display: false }, tooltip: { backgroundColor: theme.surface, titleColor: theme.text, bodyColor: theme.text, borderColor: theme.border, borderWidth: 1, padding: 10, displayColors: true, callbacks: { label: function (c) { var k = order[c.dataIndex]; return ' ' + fmtPct(c.parsed) + ' of spend · ' + fmtInt(q[k].n) + ' customers · avg ' + fmtUSD(q[k].avg_spend); } } } } }
+    });
+    document.getElementById('legend6').innerHTML = order.map(function (k, i) { return '<li><i style="background:' + cols[i] + '"></i>' + k + ' · ' + fmtPct(q[k].spend_share_pct) + '</li>'; }).join('');
+    setTable('c6', ['Spend quartile', 'Customers', 'Share of spend', 'Avg spend', 'Avg income', 'Response rate'], order.map(function (k) { return [k, fmtInt(q[k].n), fmtPct(q[k].spend_share_pct), fmtUSD(q[k].avg_spend), fmtUSD(q[k].avg_income), fmtPct(q[k].response_pct)]; }));
+    setAria('ch6', 'Doughnut chart of share of total spend by spend quartile: ' + order.map(function (k) { return k + ' ' + fmtPct(q[k].spend_share_pct); }).join(', ') + '.');
+
+    var pa = DATA.response_by_prior_accepts, pl = DATA.response_by_prior_accepts_labels, pk = ['0', '1', '2'];
+    makeBar('ch7', pk.map(function (k) { return pl[k]; }), pk.map(function (k) { return pa[k].response_pct; }), theme.accent, false,
+      function (v) { return v + '%'; }, function (v) { return fmtPct(v); }, function (v, c) { return fmtPct(v) + ' of ' + fmtInt(pa[pk[c.dataIndex]].n) + ' customers'; });
+    setTable('c7', ['Prior accepts', 'Customers', 'Response rate'], pk.map(function (k) { return [pl[k], fmtInt(pa[k].n), fmtPct(pa[k].response_pct)]; }));
+    setAria('ch7', 'Bar chart of last-campaign response by prior accepts: ' + pk.map(function (k) { return pl[k] + ' ' + fmtPct(pa[k].response_pct); }).join(', ') + '.');
+
+    var rr = DATA.response_by_recency, rk = Object.keys(rr);
+    makeBar('ch8', rk.map(function (k) { return k.replace(' days', ''); }), rk.map(function (k) { return rr[k].response_pct; }), theme.accent, false,
+      function (v) { return v + '%'; }, function (v) { return fmtPct(v); }, function (v, c) { return fmtPct(v) + ' of ' + fmtInt(rr[rk[c.dataIndex]].n) + ' customers'; });
+    setTable('c8', ['Days since last purchase', 'Customers', 'Response rate'], rk.map(function (k) { return [k, fmtInt(rr[k].n), fmtPct(rr[k].response_pct)]; }));
+    setAria('ch8', 'Bar chart of last-campaign response by days since last purchase: ' + rk.map(function (k) { return k + ' ' + fmtPct(rr[k].response_pct); }).join(', ') + '.');
+  }
+
+  // ---------- findings
+  function li(items) { return items.map(function (f) { return '<li><div><strong>' + f.title + '</strong><span>' + f.text + '</span></div></li>'; }).join(''); }
+  document.getElementById('findings').innerHTML = li(DATA.findings);
+  document.getElementById('recs').innerHTML = li(DATA.recommendations);
+
+  // ---------- theme
+  function currentTheme() {
+    var a = document.documentElement.getAttribute('data-theme');
+    if (a === 'dark' || a === 'light') return a;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  document.getElementById('themeBtn').addEventListener('click', function () {
+    var next = currentTheme() === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    ANIM = 0; renderAll(); ANIM = 350;
+  });
+  if (window.matchMedia) { try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () { if (!document.documentElement.getAttribute('data-theme')) renderAll(); }); } catch (e) {} }
+
+  function renderAll() { readTheme(); render(); renderStatic(); }
+  renderAll();
+
+  // ---------- reveal on scroll
+  var els = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) { entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }); }, { threshold: 0.08 });
+    els.forEach(function (el) { io.observe(el); });
+  } else { els.forEach(function (el) { el.classList.add('in'); }); }
+})();
+</script>
+</body>
+</html>
